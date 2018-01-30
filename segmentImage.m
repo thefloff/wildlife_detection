@@ -36,6 +36,18 @@ function bbs = segmentImage(img, bg_featureMat, BlocksPerImage, visualize, cutOu
         bb = rp(i).BoundingBox;
         bb = bb.*8;
         bb(1:2) = bb(1:2) - 4;
+        
+            crop = img(bb(1):bb(1)+bb(3),bb(2):bb(2)+bb(4));
+            
+            figure;
+            imshow(crop);
+
+            class = classifyDCNN(crop,'googlenet resized.mat');
+
+            % classes:
+            classIDToName = ["Dachs","Vogel","Wildschwein","Reh","Fuchs","Hase","Eichhörnchen","Hirsch","Rehbock"];
+            disp(['Class ', classIDToName(double(class(1)))]);
+        
         if visualize
             rectangle('Position',bb,'EdgeColor','r','LineWidth',1);
         end
