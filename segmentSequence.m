@@ -1,6 +1,6 @@
 function segmentSequence(path, visualize, cutOut)
 
-    [imgs, names] = loadSequence(path);
+    [imgs, names, bw, originals] = loadSequence(path);
 
     bg = getBackground(imgs);
 
@@ -29,7 +29,8 @@ function segmentSequence(path, visualize, cutOut)
         name = [folder '\' names(k).name];
         fprintf(file, '%s ', name);
         fclose(file);
-        segmentImage(imgs(:,:,k), bg_featureMat, BlocksPerImage, visualize, cutOut);
+        
+        segmentImage(imgs(:,:,k), bg_featureMat, BlocksPerImage, visualize, cutOut, bw, originals(:,:,3*(k-1)+1:3*k));
     end
 
 end

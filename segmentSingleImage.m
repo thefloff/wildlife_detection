@@ -7,7 +7,7 @@ function segmentSingleImage(path, visualize, cutOut)
     end
     superdir = superdir(1:pos-1);
 
-    [imgs, names] = loadSequence(superdir);
+    [imgs, names, bw, originals] = loadSequence(superdir);
         
     for k=1:length(names)
         curName = [superdir '\' names(k).name];
@@ -42,6 +42,6 @@ function segmentSingleImage(path, visualize, cutOut)
     name = [folder '\' names(imgIdx).name];
     fprintf(file, '%s ', name);
     fclose(file);
-    segmentImage(imgs(:,:,imgIdx), bg_featureMat, BlocksPerImage, visualize, cutOut);
+    segmentImage(imgs(:,:,imgIdx), bg_featureMat, BlocksPerImage, visualize, cutOut, bw, originals(:,:,3*(imgIdx-1)+1:3*imgIdx));
 
 end

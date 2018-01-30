@@ -1,11 +1,11 @@
-function bbs = segmentImage(img, bg_featureMat, BlocksPerImage, visualize, cutOut)
+function bbs = segmentImage(img, bg_featureMat, BlocksPerImage, visualize, cutOut, bw, original)
     features = extractHOGFeatures(img);
     featureMat = reshape(features, [36, BlocksPerImage]);
 
     detect = zeros(BlocksPerImage, 'uint8');
     for i=1:BlocksPerImage(1)
         for j=1:BlocksPerImage(2)
-            if hogDiff(getHogAtBlock(bg_featureMat, i, j), getHogAtBlock(featureMat, i, j)) > 1.5
+            if hogDiff(getHogAtBlock(bg_featureMat, i, j), getHogAtBlock(featureMat, i, j)) > (1.7 + bw * 2.0)
                 detect(i,j) = 255;
             end
         end
@@ -15,6 +15,9 @@ function bbs = segmentImage(img, bg_featureMat, BlocksPerImage, visualize, cutOu
     detect = imgaussfilt(detect, 0.5);
     detect = imclose(detect, strel('disk',3));
     detect(detect < 230) = 0;
+    
+    figure;
+    imshow(detect);
 
     CC = bwconncomp(detect);
     numPixels = cellfun(@numel,CC.PixelIdxList);
@@ -28,23 +31,32 @@ function bbs = segmentImage(img, bg_featureMat, BlocksPerImage, visualize, cutOu
 
     if visualize
         figure, hold on;
-        imshow(img);
+        imshow(original);
     end
     
     bbs = zeros([length(rp) 4]);
+    classNr = -1;
     for i=1:length(rp)
         bb = rp(i).BoundingBox;
         bb = bb.*8;
         bb(1:2) = bb(1:2) - 4;
         
-        crop = img(bb(2):bb(2)+bb(4), bb(1):bb(1)+bb(3));
+        bb(1) = max(1, bb(1));
+        bb(2) = max(1, bb(2));
+        bb(3) = min(length(img(1,:)) - bb(1), bb(3));
+        bb(3) = max(1, bb(3));
+        bb(4) = min(length(img(:,1)) - bb(2), bb(4));
+        bb(4) = max(1, bb(4));
+        
+        crop = rgb2gray(original);
+        crop = crop(bb(2):bb(2)+bb(4), bb(1):bb(1)+bb(3));
 
         class = classifyDCNN(crop,'googlenet resized.mat');
 
         % classes:
         classIDToName = ["Dachs","Vogel","Wildschwein","Reh","Fuchs","Hase","Eichhörnchen","Hirsch","Rehbock"];
         className = classIDToName(double(class(1)));
-        disp(['Class ', className]);
+        classNr = int16(class(1));
         
         if visualize
             rectangle('Position',bb,'EdgeColor','r','LineWidth',1);
@@ -53,8 +65,7 @@ function bbs = segmentImage(img, bg_featureMat, BlocksPerImage, visualize, cutOu
         bbs(i,:) = bb;
     end
     
-    classNr = 13;
-    nrBB = length(bb(:,1));
+    nrBB = length(bbs(:,1));
     
     file = fopen('annotations_generated.txt', 'a');
     fprintf(file, '%i %i', classNr, nrBB);
@@ -85,8 +96,9 @@ function bbs = segmentImage(img, bg_featureMat, BlocksPerImage, visualize, cutOu
             end
         end
 
-        BW = lazysnapping(img, superPixels, foreground_mask, background_mask);
-        result = img;
+        BW = lazysnapping(original, superPixels, foreground_mask, background_mask);
+        BW = repmat(BW, [1 1 3]);
+        result = original;
         result(~BW) = 0;
 
         figure, hold on;
