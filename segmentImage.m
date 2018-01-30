@@ -37,22 +37,32 @@ function bbs = segmentImage(img, bg_featureMat, BlocksPerImage, visualize, cutOu
         bb = bb.*8;
         bb(1:2) = bb(1:2) - 4;
         
-            crop = img(bb(1):bb(1)+bb(3),bb(2):bb(2)+bb(4));
-            
-            figure;
-            imshow(crop);
+        crop = img(bb(2):bb(2)+bb(4), bb(1):bb(1)+bb(3));
 
-            class = classifyDCNN(crop,'googlenet resized.mat');
+        class = classifyDCNN(crop,'googlenet resized.mat');
 
-            % classes:
-            classIDToName = ["Dachs","Vogel","Wildschwein","Reh","Fuchs","Hase","Eichhörnchen","Hirsch","Rehbock"];
-            disp(['Class ', classIDToName(double(class(1)))]);
+        % classes:
+        classIDToName = ["Dachs","Vogel","Wildschwein","Reh","Fuchs","Hase","Eichhörnchen","Hirsch","Rehbock"];
+        className = classIDToName(double(class(1)));
+        disp(['Class ', className]);
         
         if visualize
             rectangle('Position',bb,'EdgeColor','r','LineWidth',1);
+            text(bb(1), bb(2) - 40 , className, 'Color','red','FontSize',18);
         end
         bbs(i,:) = bb;
     end
+    
+    classNr = 13;
+    nrBB = length(bb(:,1));
+    
+    file = fopen('annotations_generated.txt', 'a');
+    fprintf(file, '%i %i', classNr, nrBB);
+    for i=1:nrBB
+        fprintf(file,' %i %i %i %i',bbs(i,1),bbs(i,2),bbs(i,3),bbs(i,4));
+    end
+    fprintf(file, '\n');
+    fclose(file);    
     
     if cutOut
         

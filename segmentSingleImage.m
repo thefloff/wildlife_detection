@@ -26,10 +26,22 @@ function segmentSingleImage(path, visualize, cutOut)
     bg_features = extractHOGFeatures(bg);
     bg_featureMat = reshape(bg_features, [36, BlocksPerImage]);
 
-    figure;
-    imshow(bg);
-    
-    bbs = segmentImage(imgs(:,:,imgIdx), bg_featureMat, BlocksPerImage, visualize, cutOut);
-    disp(bbs);
+    if visualize
+        figure;
+        imshow(bg);
+        title('Calculated background');
+    end
+        
+    file = fopen('annotations_generated.txt', 'a');
+    folder = names(imgIdx).folder;
+    pos = find(folder == '\', 1, 'last');
+    if ~pos
+        pos = find(folder == '/', 1, 'last');
+    end
+    folder = folder(pos:end);
+    name = [folder '\' names(imgIdx).name];
+    fprintf(file, '%s ', name);
+    fclose(file);
+    segmentImage(imgs(:,:,imgIdx), bg_featureMat, BlocksPerImage, visualize, cutOut);
 
 end

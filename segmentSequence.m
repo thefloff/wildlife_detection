@@ -12,12 +12,24 @@ function segmentSequence(path, visualize, cutOut)
     bg_features = extractHOGFeatures(bg);
     bg_featureMat = reshape(bg_features, [36, BlocksPerImage]);
 
-    figure;
-    imshow(bg);
+    if visualize
+        figure;
+        imshow(bg);
+        title('Calculated background');
+    end
 
     for k=1:length(names)
-        bbs = segmentImage(imgs(:,:,k), bg_featureMat, BlocksPerImage, visualize, cutOut);
-        disp(bbs);
+        file = fopen('annotations_generated.txt', 'a');
+        folder = names(k).folder;
+        pos = find(folder == '\', 1, 'last');
+        if ~pos
+            pos = find(folder == '/', 1, 'last');
+        end
+        folder = folder(pos:end);
+        name = [folder '\' names(k).name];
+        fprintf(file, '%s ', name);
+        fclose(file);
+        segmentImage(imgs(:,:,k), bg_featureMat, BlocksPerImage, visualize, cutOut);
     end
 
 end
